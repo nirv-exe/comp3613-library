@@ -1,6 +1,10 @@
-from pwdlib import PasswordHash
-from datetime import timedelta, datetime, timezone
+import secrets
+from datetime import datetime, timedelta, timezone
+
 import jwt
+from pwdlib import PasswordHash
+from starlette.requests import Request
+
 from app.config import get_settings
 
 password_hash = PasswordHash.recommended()
@@ -37,3 +41,12 @@ def access_token_cookie_kwargs() -> dict:
         "samesite": "none" if is_prod else "lax",
         "secure": is_prod,
     }
+
+
+def get_csrf_token(request: Request) -> str:
+    """Return a session-bound token for HTML forms, creating one if needed."""
+    token = request.session.get("csrf_token")
+    if token is None:
+        token = secrets.token_urlsafe(32)
+        request.session["csrf_token"] = token
+    return token

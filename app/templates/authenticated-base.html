@@ -5,7 +5,16 @@
   <header class="app-topbar">
     <a class="brand-wordmark" href="{{ url_for('index_view') }}">StackRoom</a>
     <nav class="app-topnav" aria-label="App">
+      {% if user.role == "lecturer" %}
+      <a class="{{ 'is-active' if request.url.path.startswith('/lecturer') }}" href="{{ url_for('lecturer_home_view') }}">Lecturer dashboard</a>
+      {% elif user.role == "coordinator" %}
+      <a class="{{ 'is-active' if request.url.path.startswith('/coordinator') }}" href="{{ url_for('coordinator_home_view') }}">Coordinator dashboard</a>
+      {% elif user.role == "admin" %}
+      <a class="{{ 'is-active' if request.url.path.startswith('/admin') }}" href="{{ url_for('admin_home_view') }}">Admin dashboard</a>
+      <a class="{{ 'is-active' if request.url.path.startswith('/coordinator') }}" href="{{ url_for('coordinator_home_view') }}">Coordinator dashboard</a>
+      {% else %}
       <a class="{{ 'is-active' if request.url.path.startswith('/app') }}" href="{{ url_for('user_home_view') }}">Home</a>
+      {% endif %}
       <a href="/docs">API docs</a>
       <a href="{{ url_for('logout') }}">Sign out</a>
       <span class="app-user">{{ user.username }}</span>
@@ -13,7 +22,7 @@
   </header>
   <main class="app-main">
     {% for message in get_flashed_messages(request) %}
-    <div class="alert alert-{{ message.type }}" role="alert">{{ message.message }}</div>
+    <div class="alert alert-{{ message.type }} feedback-message" role="alert">{{ message.message }}</div>
     {% endfor %}
     {% block subpage_content %}{% endblock %}
   </main>

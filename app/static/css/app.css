@@ -442,3 +442,90 @@ a {
   border-color: var(--brand-accent);
   color: var(--brand-ink);
 }
+
+/* —— Shared dashboard components —— */
+.app-main .form-label {
+  color: var(--brand-ink);
+  font-weight: 600;
+}
+
+.app-main .form-control,
+.app-main .form-select {
+  border-color: var(--brand-rule-paper);
+  border-radius: var(--brand-radius);
+  color: var(--brand-ink);
+}
+
+.app-main .form-control:focus,
+.app-main .form-select:focus {
+  border-color: var(--brand-accent);
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--brand-accent) 24%, transparent);
+}
+
+.app-main .btn {
+  border-radius: var(--brand-radius);
+  font-weight: 600;
+}
+
+.app-main .btn-primary {
+  background: var(--brand-accent);
+  border-color: var(--brand-accent);
+  color: var(--brand-accent-ink);
+}
+
+.app-main .btn-primary:hover,
+.app-main .btn-primary:focus-visible {
+  background: color-mix(in srgb, var(--brand-accent) 88%, #000);
+  border-color: color-mix(in srgb, var(--brand-accent) 88%, #000);
+  color: var(--brand-accent-ink);
+}
+
+.app-table {
+  --bs-table-color: var(--brand-ink);
+  --bs-table-bg: #fff;
+  --bs-table-border-color: var(--brand-rule-paper);
+  --bs-table-striped-bg: color-mix(in srgb, var(--brand-surface) 72%, #fff);
+  --bs-table-hover-bg: color-mix(in srgb, var(--brand-accent) 12%, #fff);
+}
+
+.app-table th {
+  color: var(--brand-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #e8edf1;
+  color: var(--brand-ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.status-indicator--pending {
+  background: #fff3cd;
+  color: #664d03;
+}
+
+.status-indicator--accepted,
+.status-indicator--success {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.status-indicator--rejected,
+.status-indicator--cancelled,
+.status-indicator--danger {
+  background: #f8d7da;
+  color: #842029;
+}
+
+.feedback-message {
+  border-radius: var(--brand-radius);
+}

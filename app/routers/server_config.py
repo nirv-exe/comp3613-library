@@ -27,6 +27,7 @@ from app.config import (
     set_runtime_env,
 )
 from app.database import drop_all, engine, ensure_db_and_tables
+from app.dependencies.csrf import CsrfTokenDep
 from app.utilities.flash import flash
 
 from . import router, templates
@@ -154,6 +155,7 @@ async def config_login_view(request: Request):
 @router.post("/config/login", name="config_login_action")
 async def config_login_action(
     request: Request,
+    csrf: CsrfTokenDep,
     password: str = Form(""),
 ):
     if not _panel_enabled():
@@ -176,7 +178,7 @@ async def config_login_action(
 
 
 @router.post("/config/logout", name="config_logout_action")
-async def config_logout_action(request: Request):
+async def config_logout_action(request: Request, csrf: CsrfTokenDep):
     request.session.pop(_SESSION_KEY, None)
     flash(request, "Locked config panel", "success")
     return RedirectResponse(
@@ -210,7 +212,7 @@ async def config_panel_view(request: Request):
 
 
 @router.post("/config/actions/restart", name="config_restart_action")
-async def config_restart_action(request: Request):
+async def config_restart_action(request: Request, csrf: CsrfTokenDep):
     gate = _require_panel(request)
     if gate is not None:
         return gate
@@ -229,6 +231,7 @@ async def config_restart_action(request: Request):
 @router.post("/config/actions/reinit-db", name="config_reinit_db_action")
 async def config_reinit_db_action(
     request: Request,
+    csrf: CsrfTokenDep,
     drop: str = Form(""),
     seed: str = Form(""),
 ):
@@ -259,7 +262,7 @@ async def config_reinit_db_action(
 
 
 @router.post("/config/actions/seed", name="config_seed_action")
-async def config_seed_action(request: Request):
+async def config_seed_action(request: Request, csrf: CsrfTokenDep):
     gate = _require_panel(request)
     if gate is not None:
         return gate
@@ -280,7 +283,7 @@ async def config_seed_action(request: Request):
 
 
 @router.post("/config/actions/toggle-env", name="config_toggle_env_action")
-async def config_toggle_env_action(request: Request):
+async def config_toggle_env_action(request: Request, csrf: CsrfTokenDep):
     gate = _require_panel(request)
     if gate is not None:
         return gate
@@ -305,6 +308,7 @@ async def config_toggle_env_action(request: Request):
 @router.post("/config/actions/set-env", name="config_set_env_action")
 async def config_set_env_action(
     request: Request,
+    csrf: CsrfTokenDep,
     mode: str = Form(...),
 ):
     gate = _require_panel(request)
@@ -322,7 +326,7 @@ async def config_set_env_action(
 
 
 @router.post("/config/actions/ping-db", name="config_ping_db_action")
-async def config_ping_db_action(request: Request):
+async def config_ping_db_action(request: Request, csrf: CsrfTokenDep):
     gate = _require_panel(request)
     if gate is not None:
         return gate
@@ -342,7 +346,7 @@ async def config_ping_db_action(request: Request):
 
 
 @router.post("/config/actions/dispose-pool", name="config_dispose_pool_action")
-async def config_dispose_pool_action(request: Request):
+async def config_dispose_pool_action(request: Request, csrf: CsrfTokenDep):
     gate = _require_panel(request)
     if gate is not None:
         return gate
@@ -358,7 +362,7 @@ async def config_dispose_pool_action(request: Request):
 
 
 @router.post("/config/actions/clear-cache", name="config_clear_cache_action")
-async def config_clear_cache_action(request: Request):
+async def config_clear_cache_action(request: Request, csrf: CsrfTokenDep):
     gate = _require_panel(request)
     if gate is not None:
         return gate
