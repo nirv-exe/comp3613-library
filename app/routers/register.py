@@ -1,11 +1,15 @@
+from fastapi import Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi import Request, status, Form, HTTPException
+
 from app.dependencies import SessionDep
+from app.dependencies.csrf import CsrfTokenDep
+from app.repositories.user import UserRepository
 from app.schemas.auth import SignupRequest
 from app.services.auth_service import AuthService
-from app.repositories.user import UserRepository
 from app.utilities.flash import flash
+
 from . import router, templates
+
 
 # View route (loads the page)
 @router.get("/register", response_class=HTMLResponse)
@@ -18,6 +22,7 @@ async def register_view(request: Request):
 # Action route (performs an action)
 @router.post('/register', response_class=HTMLResponse, status_code=status.HTTP_201_CREATED)
 def signup_user(request:Request, db:SessionDep, 
+    csrf: CsrfTokenDep,
     username: str = Form(),
     email: str = Form(),
     password: str = Form(),

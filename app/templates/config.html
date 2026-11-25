@@ -66,6 +66,7 @@
         <h1 class="h4 mb-3">Server config</h1>
         <p class="cfg-muted">Enter the ops password from <code>CONFIG_PASSWORD</code>.</p>
         <form method="post" action="{{ url_for('config_login_action') }}">
+            {% include "csrf_field.html" %}
             <div class="mb-3">
                 <label class="form-label" for="password">Password</label>
                 <input class="form-control" type="password" id="password" name="password" required autofocus>
@@ -84,6 +85,7 @@
             <p class="cfg-muted mb-0">Ops console — password gated</p>
         </div>
         <form method="post" action="{{ url_for('config_logout_action') }}">
+            {% include "csrf_field.html" %}
             <button class="btn btn-outline-light btn-sm" type="submit">Lock</button>
         </form>
     </div>
@@ -139,18 +141,23 @@
         <h2>Utilities</h2>
         <div class="btn-row">
             <form method="post" action="{{ url_for('config_ping_db_action') }}">
+                {% include "csrf_field.html" %}
                 <button class="btn btn-outline-info btn-sm" type="submit">Ping DB</button>
             </form>
             <form method="post" action="{{ url_for('config_seed_action') }}">
+                {% include "csrf_field.html" %}
                 <button class="btn btn-outline-success btn-sm" type="submit">Seed demo users</button>
             </form>
             <form method="post" action="{{ url_for('config_dispose_pool_action') }}">
+                {% include "csrf_field.html" %}
                 <button class="btn btn-outline-secondary btn-sm" type="submit">Dispose DB pool</button>
             </form>
             <form method="post" action="{{ url_for('config_clear_cache_action') }}">
+                {% include "csrf_field.html" %}
                 <button class="btn btn-outline-secondary btn-sm" type="submit">Clear settings cache</button>
             </form>
             <form method="post" action="{{ url_for('config_toggle_env_action') }}">
+                {% include "csrf_field.html" %}
                 <button class="btn btn-outline-warning btn-sm" type="submit">
                     Toggle ENV → {% if status.is_production %}development{% else %}production{% endif %}
                 </button>
@@ -160,6 +167,7 @@
         <hr class="border-secondary my-3">
 
         <form method="post" action="{{ url_for('config_set_env_action') }}" class="row g-2 align-items-end mb-3">
+            {% include "csrf_field.html" %}
             <div class="col-sm-6">
                 <label class="form-label" for="mode">Set ENV</label>
                 <select class="form-select form-select-sm" id="mode" name="mode">
@@ -174,6 +182,7 @@
 
         <form method="post" action="{{ url_for('config_reinit_db_action') }}" class="mb-3"
               onsubmit="return confirm('Reinitialize the database? This can wipe data if Drop is checked.');">
+            {% include "csrf_field.html" %}
             <div class="form-check mb-2">
                 <input class="form-check-input" type="checkbox" value="1" id="drop" name="drop">
                 <label class="form-check-label" for="drop">Drop all tables first</label>
@@ -187,6 +196,7 @@
 
         <form method="post" action="{{ url_for('config_restart_action') }}"
               onsubmit="return confirm('Exit this process so the host restarts it?');">
+            {% include "csrf_field.html" %}
             <button class="btn btn-outline-danger btn-sm" type="submit">Restart server process</button>
             <span class="cfg-muted small ms-2">Render respawns automatically; local uvicorn may need a manual start.</span>
         </form>

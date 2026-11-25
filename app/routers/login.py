@@ -1,11 +1,15 @@
+from fastapi import Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi import Request, status, Form
+
 from app.dependencies import SessionDep
-from . import router, templates
-from app.services.auth_service import AuthService
+from app.dependencies.csrf import CsrfTokenDep
 from app.repositories.user import UserRepository
+from app.services.auth_service import AuthService
 from app.utilities.flash import flash
+from app.utilities.roles import dashboard_route_name
 from app.utilities.security import access_token_cookie_kwargs
+
+from . import router, templates
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -20,6 +24,7 @@ async def login_view(request: Request):
 async def login_action_ajax(
     db: SessionDep,
     request: Request,
+    csrf: CsrfTokenDep,
     username: str = Form(),
     password: str = Form(),
 ):
@@ -34,7 +39,8 @@ async def login_action_ajax(
         )
 
     user = user_repo.get_by_username(username)
-    dest = "admin_home_view" if user and user.role == "admin" else "user_home_view"
+    dest = dashboard_route_name(user.role) if user else "user_home_view"
+    request.session.pop("csrf_token", None)
     response = RedirectResponse(
         url=request.url_for(dest),
         status_code=status.HTTP_303_SEE_OTHER,
