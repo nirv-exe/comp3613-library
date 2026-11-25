@@ -2,6 +2,161 @@
 {% block title %}Lecturer dashboard · StackRoom{% endblock %}
 
 {% block subpage_content %}
-<h1>Lecturer dashboard</h1>
-<p>Your StackRoom workspace is ready. Lecturer booking tools will appear here.</p>
+<h1>Workshop rooms</h1>
+<p>Browse room availability, request a workshop booking, and manage your requests.</p>
+
+<section aria-labelledby="rooms-heading">
+  <h2 id="rooms-heading">Available rooms</h2>
+  {% if rooms %}
+  <div class="row g-3">
+    {% for room in rooms %}
+    <div class="col-md-4">
+      <article class="card h-100">
+        <div class="card-body">
+          <h3 class="h5 card-title">{{ room.name }}</h3>
+          <p class="card-text">Effective capacity: {{ room.effective_capacity }}</p>
+        </div>
+      </article>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="alert alert-info feedback-message" role="status">No workshop rooms are currently available.</p>
+  {% endif %}
+</section>
+
+<section class="mt-4" aria-labelledby="availability-heading">
+  <h2 id="availability-heading">Booked time slots</h2>
+  <form method="get" action="{{ url_for('lecturer_home_view') }}" class="row g-3 align-items-end mb-3">
+    <div class="col-md-5">
+      <label class="form-label" for="schedule-room">Room</label>
+      <select class="form-select" id="schedule-room" name="room_id" required>
+        {% for room in rooms %}
+        <option value="{{ room.id }}" {% if room.id == selected_room_id %}selected{% endif %}>
+          {{ room.name }} · capacity {{ room.effective_capacity }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="schedule-date">Date</label>
+      <input class="form-control" id="schedule-date" name="date_filter" type="date" value="{{ selected_date }}" required>
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-outline-secondary" type="submit">View time slots</button>
+    </div>
+  </form>
+
+  {% if booked_slots %}
+  <div class="table-responsive">
+    <table class="table app-table">
+      <thead>
+        <tr><th scope="col">Start</th><th scope="col">End</th><th scope="col">Status</th></tr>
+      </thead>
+      <tbody>
+        {% for slot in booked_slots %}
+        <tr>
+          <td>{{ slot.start_time }}</td>
+          <td>{{ slot.end_time }}</td>
+          <td><span class="status-indicator status-indicator--{{ slot.status }}">{{ slot.status|title }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif rooms %}
+  <p class="alert alert-info feedback-message" role="status">No pending requests or accepted bookings for this room and date.</p>
+  {% endif %}
+</section>
+
+<section class="mt-4" aria-labelledby="request-heading">
+  <h2 id="request-heading">Request a workshop booking</h2>
+  {% if rooms %}
+  <form method="post" action="{{ url_for('lecturer_booking_create') }}" class="row g-3">
+    {% include "csrf_field.html" %}
+    <div class="col-md-6">
+      <label class="form-label" for="course-code">Course code</label>
+      <input class="form-control" id="course-code" name="course_code" type="text" required maxlength="50">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="booking-room">Room</label>
+      <select class="form-select" id="booking-room" name="room_id" required>
+        {% for room in rooms %}
+        <option value="{{ room.id }}">{{ room.name }} · capacity {{ room.effective_capacity }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="headcount">Student headcount</label>
+      <input class="form-control" id="headcount" name="headcount" type="number" min="1" step="1" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="preferred-date">Preferred date</label>
+      <input class="form-control" id="preferred-date" name="preferred_date" type="date" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="start-time">Start time</label>
+      <input class="form-control" id="start-time" name="start_time" type="time" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="end-time">End time</label>
+      <input class="form-control" id="end-time" name="end_time" type="time" required>
+    </div>
+    <div class="col-12">
+      <label class="form-label" for="resources">Required resources</label>
+      <textarea class="form-control" id="resources" name="resources" rows="2" required maxlength="500"></textarea>
+    </div>
+    <div class="col-12">
+      <button class="btn btn-primary" type="submit">Submit booking request</button>
+      <p class="form-text">Your request will remain pending until reviewed by a coordinator.</p>
+    </div>
+  </form>
+  {% else %}
+  <p>Booking requests are unavailable until a workshop room has been added.</p>
+  {% endif %}
+</section>
+
+<section class="mt-4" aria-labelledby="my-bookings-heading">
+  <h2 id="my-bookings-heading">My bookings</h2>
+  {% if my_bookings %}
+  <div class="table-responsive">
+    <table class="table app-table">
+      <thead>
+        <tr>
+          <th scope="col">Course</th>
+          <th scope="col">Room</th>
+          <th scope="col">Date and time</th>
+          <th scope="col">Headcount</th>
+          <th scope="col">Status</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for booking in my_bookings %}
+        <tr>
+          <td>{{ booking.course_code }}</td>
+          <td>{{ booking.room_name }}</td>
+          <td>{{ booking.preferred_date }} · {{ booking.start_time }}–{{ booking.end_time }}</td>
+          <td>{{ booking.headcount }}</td>
+          <td><span class="status-indicator status-indicator--{{ booking.status }}">{{ booking.status|title }}</span></td>
+          <td>
+            {% if booking.confirmation_url %}
+            <a class="btn btn-sm btn-outline-primary" href="{{ booking.confirmation_url }}">View confirmation</a>
+            {% endif %}
+            {% if booking.can_cancel %}
+            <form method="post" action="{{ url_for('lecturer_booking_cancel', booking_id=booking.id) }}" class="d-inline" onsubmit="return confirm('Cancel this booking?');">
+              {% include "csrf_field.html" %}
+              <button class="btn btn-sm btn-outline-danger" type="submit">Cancel</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="alert alert-info feedback-message" role="status">You have not submitted any booking requests yet.</p>
+  {% endif %}
+</section>
 {% endblock %}

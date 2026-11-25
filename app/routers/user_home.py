@@ -1,9 +1,8 @@
-from fastapi import Request, status
+from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-
-from app.dependencies.auth import AuthDep
-from app.utilities.roles import dashboard_route_name
-
+from fastapi import status
+from app.dependencies.session import SessionDep
+from app.dependencies.auth import AuthDep, IsUserLoggedIn, get_current_user, is_admin
 from . import router, templates
 
 
@@ -11,14 +10,10 @@ from . import router, templates
 async def user_home_view(
     request: Request,
     user: AuthDep,
+    db:SessionDep
 ):
-    if user.role in {"lecturer", "coordinator", "admin"}:
-        return RedirectResponse(
-            url=request.url_for(dashboard_route_name(user.role)),
-            status_code=status.HTTP_303_SEE_OTHER,
-        )
     return templates.TemplateResponse(
-        request=request,
+        request=request, 
         name="app.html",
         context={
             "user": user
