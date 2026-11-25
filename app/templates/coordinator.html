@@ -2,6 +2,381 @@
 {% block title %}Coordinator dashboard · StackRoom{% endblock %}
 
 {% block subpage_content %}
-<h1>Coordinator dashboard</h1>
-<p>Your StackRoom workspace is ready. Coordinator booking tools will appear here.</p>
+
+<div class="coordinator-dashboard">
+
+    {% set counts = namespace(total=0, pending=0, accepted=0, rejected=0) %}
+    {% for booking in bookings %}
+    {% set counts.total = counts.total + 1 %}
+    {% if booking['status'] == 'pending' %}
+    {% set counts.pending = counts.pending + 1 %}
+    {% elif booking['status'] == 'accepted' %}
+    {% set counts.accepted = counts.accepted + 1 %}
+    {% elif booking['status'] == 'rejected' %}
+    {% set counts.rejected = counts.rejected + 1 %}
+    {% endif %}
+    {% endfor %}
+
+    <header class="coordinator-header">
+        <div>
+            <span class="coordinator-eyebrow">STACKROOM MANAGEMENT</span>
+            <h1>Coordinator dashboard</h1>
+            <p>Manage workshop bookings, review requests and monitor room conflicts.</p>
+        </div>
+        <a href="{{ url_for('coordinator_home_view') }}" class="btn btn-outline-secondary coordinator-refresh">
+            Refresh dashboard
+        </a>
+    </header>
+
+    <section class="coordinator-stats" aria-label="Booking summary">
+
+        <article class="coordinator-stat">
+            <span class="coordinator-stat-label">Total bookings</span>
+            <strong>{{ counts.total }}</strong>
+            <span class="coordinator-stat-note">All recorded requests</span>
+        </article>
+
+        <article class="coordinator-stat coordinator-stat--pending">
+            <span class="coordinator-stat-label">Pending requests</span>
+            <strong>{{ counts.pending }}</strong>
+            <span class="coordinator-stat-note">Awaiting review</span>
+        </article>
+
+        <article class="coordinator-stat coordinator-stat--accepted">
+            <span class="coordinator-stat-label">Accepted bookings</span>
+            <strong>{{ counts.accepted }}</strong>
+            <span class="coordinator-stat-note">Approved requests</span>
+        </article>
+
+        <article class="coordinator-stat coordinator-stat--rejected">
+            <span class="coordinator-stat-label">Rejected bookings</span>
+            <strong>{{ counts.rejected }}</strong>
+            <span class="coordinator-stat-note">Unapproved requests</span>
+        </article>
+
+    </section>
+
+    <section class="coordinator-panel">
+        <div class="coordinator-section-heading">
+            <div>
+                <span class="coordinator-eyebrow">BOOKING MANAGEMENT</span>
+                <h2>Booking requests</h2>
+                <p>Review submissions and manage their status.</p>
+            </div>
+            <span class="coordinator-count">{{ counts.total }} records</span>
+        </div>
+
+        <div class="coordinator-filters">
+            <div>
+                <label for="roomFilter">Room</label>
+                <select id="roomFilter" class="form-select">
+                    <option value="">All rooms</option>
+                    {% for room in rooms %}
+                    <option value="{{ room['id'] }}">{{ room['name'] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label for="dateFilter">Booking date</label>
+                <input type="date" id="dateFilter" class="form-control">
+            </div>
+
+            <div>
+                <label for="statusFilter">Status</label>
+                <select id="statusFilter" class="form-select">
+                    <option value="">All statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive coordinator-table-wrap">
+            <table class="table app-table coordinator-table" id="bookingsTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Room / Course</th>
+                        <th>Date &amp; time</th>
+                        <th>Headcount</th>
+                        <th>Submitted</th>
+                        <th>Status</th>
+                        <th>Conflict</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for booking in bookings %}
+
+                    {% set room_info = namespace(value=none) %}
+                    {% for room in rooms %}
+                    {% if room['id'] == booking['room_id'] %}
+                    {% set room_info.value = room %}
+                    {% endif %}
+                    {% endfor %}
+
+                    <tr class="booking-row" data-room="{{ booking['room_id'] }}"
+                        data-date="{{ booking['preferred_date'] }}" data-start="{{ booking['start_time'] }}"
+                        data-end="{{ booking['end_time'] }}" data-status="{{ booking['status'] }}">
+
+                        <td>
+                            <span class="coordinator-booking-id">#{{ booking['id'] }}</span>
+                        </td>
+
+                        <td>
+                            <div class="coordinator-primary-cell">
+                                <strong>
+                                    {{ room_info.value['name'] if room_info.value else 'Room ' ~ booking['room_id'] }}
+                                </strong>
+                                <span>{{ booking['course_code'] }}</span>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="coordinator-primary-cell">
+                                <strong>{{ booking['preferred_date'] }}</strong>
+                                <span>{{ booking['start_time'] }} – {{ booking['end_time'] }}</span>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="coordinator-capacity">
+                                <strong>{{ booking['headcount'] }}</strong>
+                                <span>
+                                    / {{ room_info.value['effective_capacity'] if room_info.value else 'Unknown' }}
+                                    capacity
+                                </span>
+                            </div>
+                        </td>
+
+                        <td class="coordinator-submitted">
+                            {{ booking['created_at'] }}
+                        </td>
+
+                        <td>
+                            <span class="status-indicator status-indicator--{{ booking['status'] }}">
+                                {{ booking['status']|capitalize }}
+                            </span>
+                        </td>
+
+                        <td class="conflict-cell">
+                            <span class="coordinator-conflict-neutral">Checking...</span>
+                        </td>
+
+                        <td class="coordinator-actions-cell">
+                            {% if booking['status'] == 'pending' %}
+
+                            <form method="post"
+                                action="{{ url_for('approve_booking_action', booking_id=booking['id']) }}">
+                                {% include "csrf_field.html" %}
+                                <button type="submit" class="btn btn-sm btn-primary coordinator-action-btn">
+                                    Approve
+                                </button>
+                            </form>
+
+                            <form method="post"
+                                action="{{ url_for('reject_booking_action', booking_id=booking['id']) }}">
+                                {% include "csrf_field.html" %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger coordinator-action-btn">
+                                    Reject
+                                </button>
+                            </form>
+
+                            <details class="coordinator-override">
+                                <summary>Override approval</summary>
+
+                                <form method="post"
+                                    action="{{ url_for('override_booking_action', booking_id=booking['id']) }}"
+                                    class="coordinator-override-form">
+
+                                    {% include "csrf_field.html" %}
+
+                                    <label for="justification-{{ booking['id'] }}">
+                                        Justification (required)
+                                    </label>
+
+                                    <textarea id="justification-{{ booking['id'] }}" name="override_justification"
+                                        class="form-control" rows="3" minlength="1" required
+                                        placeholder="Explain why this larger cohort should be approved."></textarea>
+
+                                    <button type="submit" class="btn btn-sm btn-warning">
+                                        Override &amp; approve
+                                    </button>
+                                </form>
+                            </details>
+
+                            {% endif %}
+
+                            {% if booking['status'] in ['pending', 'accepted'] %}
+                            <form method="post"
+                                action="{{ url_for('cancel_booking_action', booking_id=booking['id']) }}"
+                                onsubmit="return confirm('Are you sure you want to cancel this booking?');">
+                                {% include "csrf_field.html" %}
+                                <button type="submit" class="btn btn-sm btn-outline-secondary coordinator-action-btn">
+                                    Cancel
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="coordinator-empty">
+                            <strong>No booking requests yet</strong>
+                            <span>New workshop requests will appear here.</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="coordinator-panel coordinator-history">
+        <div class="coordinator-section-heading">
+            <div>
+                <span class="coordinator-eyebrow">SYSTEM RECORDS</span>
+                <h2>Conflict decision history</h2>
+                <p>Review recorded decisions, resolution reasons and override justifications.</p>
+            </div>
+            <span class="coordinator-count">{{ conflict_decisions|length }} entries</span>
+        </div>
+
+        <div class="table-responsive coordinator-table-wrap">
+            <table class="table app-table coordinator-table">
+                <thead>
+                    <tr>
+                        <th>Booking</th>
+                        <th>Stage</th>
+                        <th>Decision</th>
+                        <th>Reason</th>
+                        <th>Policy</th>
+                        <th>Status</th>
+                        <th>Override</th>
+                        <th>Justification</th>
+                        <th>Recorded at</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for decision in conflict_decisions %}
+                    <tr>
+                        <td>#{{ decision['booking_id'] or 'N/A' }}</td>
+                        <td>{{ decision['stage'] }}</td>
+                        <td>{{ decision['decision'] }}</td>
+                        <td class="coordinator-reason">{{ decision['reason'] }}</td>
+                        <td>{{ decision['policy'] or 'N/A' }}</td>
+                        <td>{{ decision['booking_status'] or 'N/A' }}</td>
+                        <td>
+                            {% if decision['override_used'] %}
+                            <span class="coordinator-yes">Yes</span>
+                            {% else %}
+                            <span class="coordinator-no">No</span>
+                            {% endif %}
+                        </td>
+                        <td class="coordinator-reason">
+                            {{ decision['override_justification'] or 'N/A' }}
+                        </td>
+                        <td class="coordinator-submitted">{{ decision['created_at'] }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="coordinator-empty">
+                            <strong>No conflict decisions recorded</strong>
+                            <span>Decision records will appear here as bookings are processed.</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</div>
+
+{% endblock %}
+
+{% block subpage_scripts %}
+<script>
+    const roomFilter = document.getElementById("roomFilter");
+    const dateFilter = document.getElementById("dateFilter");
+    const statusFilter = document.getElementById("statusFilter");
+
+    const bookingRows = Array.from(
+        document.querySelectorAll(".booking-row")
+    );
+
+    function applyFilters() {
+        const selectedRoom = roomFilter.value;
+        const selectedDate = dateFilter.value;
+        const selectedStatus = statusFilter.value;
+
+        bookingRows.forEach(row => {
+            const matchesRoom =
+                !selectedRoom || row.dataset.room === selectedRoom;
+
+            const matchesDate =
+                !selectedDate || row.dataset.date === selectedDate;
+
+            const matchesStatus =
+                !selectedStatus || row.dataset.status === selectedStatus;
+
+            row.style.display =
+                matchesRoom && matchesDate && matchesStatus ? "" : "none";
+        });
+    }
+
+    roomFilter.addEventListener("change", applyFilters);
+    dateFilter.addEventListener("change", applyFilters);
+    statusFilter.addEventListener("change", applyFilters);
+
+    // Detect overlapping pending or accepted bookings.
+    const activeStatuses = ["pending", "accepted"];
+
+    bookingRows.forEach(row => {
+        row.dataset.hasConflict = "false";
+    });
+
+    for (let i = 0; i < bookingRows.length; i++) {
+        for (let j = i + 1; j < bookingRows.length; j++) {
+            const first = bookingRows[i];
+            const second = bookingRows[j];
+
+            const sameRoom =
+                first.dataset.room === second.dataset.room;
+
+            const sameDate =
+                first.dataset.date === second.dataset.date;
+
+            const bothActive =
+                activeStatuses.includes(first.dataset.status) &&
+                activeStatuses.includes(second.dataset.status);
+
+            const timesOverlap =
+                first.dataset.start < second.dataset.end &&
+                second.dataset.start < first.dataset.end;
+
+            if (sameRoom && sameDate && bothActive && timesOverlap) {
+                first.dataset.hasConflict = "true";
+                second.dataset.hasConflict = "true";
+            }
+        }
+    }
+
+    bookingRows.forEach(row => {
+        const cell = row.querySelector(".conflict-cell");
+
+        if (row.dataset.hasConflict === "true") {
+            cell.innerHTML = '<span class="coordinator-conflict-warning">Overlap detected</span>';
+            row.classList.add("coordinator-row-conflict");
+        } else {
+            cell.innerHTML = '<span class="coordinator-conflict-neutral">No conflict</span>';
+        }
+    });
+</script>
 {% endblock %}
